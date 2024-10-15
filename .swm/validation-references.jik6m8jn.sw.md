@@ -30,16 +30,7 @@ type ReferencedResources struct {
 
 </SwmSnippet>
 
-```go
-61 type ReferencedResources struct {
-62 	AnalysisTemplatesWithType []AnalysisTemplatesWithType
-63 	Ingresses []ingressutil.Ingress
-64 	ServiceWithType []ServiceWithType
-65 	VirtualServices []unstructured.Unstructured
-66 	AmbassadorMappings []unstructured.Unstructured
-67 	AppMeshResources []unstructured.Unstructured
-68 }
-```
+&nbsp;
 
 ## <SwmToken path="pkg/apis/rollouts/validation/validation_references.go" pos="70:2:2" line-data="func ValidateRolloutReferencedResources(rollout *v1alpha1.Rollout, referencedResources ReferencedResources) field.ErrorList {">`ValidateRolloutReferencedResources`</SwmToken> Function
 
@@ -79,29 +70,7 @@ func ValidateRolloutReferencedResources(rollout *v1alpha1.Rollout, referencedRes
 
 </SwmSnippet>
 
-```go
-70 func ValidateRolloutReferencedResources(rollout *v1alpha1.Rollout, referencedResources ReferencedResources) field.ErrorList {
-71 	allErrs := field.ErrorList{}
-72 	for _, service := range referencedResources.ServiceWithType {
-73 		allErrs = append(allErrs, ValidateService(service, rollout)...)
-74 	}
-75 	for _, templates := range referencedResources.AnalysisTemplatesWithType {
-76 		allErrs = append(allErrs, ValidateAnalysisTemplatesWithType(rollout, templates)...)
-77 	}
-78 	for _, ingress := range referencedResources.Ingresses {
-79 		allErrs = append(allErrs, ValidateIngress(rollout, &ingress)...)
-80 	}
-81 	for _, vsvc := range referencedResources.VirtualServices {
-82 		allErrs = append(allErrs, ValidateVirtualService(rollout, vsvc)...)
-83 	}
-84 	for _, mapping := range referencedResources.AmbassadorMappings {
-85 		allErrs = append(allErrs, ValidateAmbassadorMapping(mapping)...)
-86 	}
-87 	for _, appmeshRes := range referencedResources.AppMeshResources {
-88 		allErrs = append(allErrs, ValidateAppMeshResource(appmeshRes)...)
-89 	}
-90 	return allErrs
-```
+&nbsp;
 
 ```mermaid
 graph TD;
@@ -128,4 +97,4 @@ graph TD;
 
 *This is an auto-generated document by Swimm 🌊 and has not yet been verified by a human*
 
-<SwmMeta version="3.0.0" repo-id="Z2l0aHViJTNBJTNBaW50dWl0LWFyZ28tcm9sbG91dHMtZGVtbyUzQSUzQVN3aW1tLURlbW8=" repo-name="intuit-argo-rollouts-demo"><sup>Powered by [Swimm](/)</sup></SwmMeta>
+<SwmMeta version="3.0.0" repo-id="Z2l0aHViJTNBJTNBaW50dWl0LWFyZ28tcm9sbG91dHMtZGVtbyUzQSUzQVN3aW1tLURlbW8=" repo-name="intuit-argo-rollouts-demo"><sup>Powered by [Swimm](https://app.swimm.io/)</sup></SwmMeta>
