@@ -5,6 +5,66 @@ In this document, we will explain the process of gathering and processing inform
 
 The flow starts by gathering all relevant information about the rollout, including details about <SwmToken path="pkg/kubectl-argo-rollouts/info/rollout_info.go" pos="65:14:14" line-data="				for _, rs := range roInfo.ReplicaSets {">`ReplicaSets`</SwmToken>, Experiments, and <SwmToken path="pkg/kubectl-argo-rollouts/info/experiment_info.go" pos="36:3:3" line-data="	expInfo.AnalysisRuns = getAnalysisRunInfo(exp.UID, allAnalysisRuns)">`AnalysisRuns`</SwmToken>. It then determines the rollout strategy, whether it's Canary or <SwmToken path="pkg/apis/rollouts/v1alpha1/types.go" pos="947:1:1" line-data="	BlueGreen BlueGreenStatus `json:&quot;blueGreen,omitempty&quot; protobuf:&quot;bytes,16,opt,name=blueGreen&quot;`">`BlueGreen`</SwmToken>, and calculates the desired and actual traffic weights. The process also involves collecting container information and setting the rollout status and message. This comprehensive information helps in understanding the state and progress of the rollout.
 
+# Where is this flow used?
+
+This flow starts from <SwmToken path="/pkg/kubectl-argo-rollouts/info/rollout_info.go" pos="20:2:2" line-data="func NewRolloutInfo(">`NewRolloutInfo`</SwmToken>, and is used multiple times in the codebase as represented in the following diagram:
+
+```mermaid
+graph TD;
+      227eaee48f790cb276fab7c3bb5c4aed07dc34a153c81931559b3ec413b1cb32(main):::rootsStyle --> 89893c9ef987121649c4f335801b0864f75ce021f4596dc04852db09a5609f75(generatePluginsDocs)
+
+subgraph pkgkubectlargorolloutscmd["pkg/kubectl-argo-rollouts/cmd"]
+89893c9ef987121649c4f335801b0864f75ce021f4596dc04852db09a5609f75(generatePluginsDocs) --> 98f36eae5f8cd66e641d11126204e9f33463cc55244c9034287eda11b47ea95c(NewCmdArgoRollouts)
+end
+
+subgraph pkgkubectlargorolloutscmd["pkg/kubectl-argo-rollouts/cmd"]
+98f36eae5f8cd66e641d11126204e9f33463cc55244c9034287eda11b47ea95c(NewCmdArgoRollouts) --> 9afdd821698b0e788cc51c92ca9909087953186691dce2e3d3e5c6490b14bd93(NewCmdCreate)
+end
+
+subgraph pkgkubectlargorolloutscmd["pkg/kubectl-argo-rollouts/cmd"]
+9afdd821698b0e788cc51c92ca9909087953186691dce2e3d3e5c6490b14bd93(NewCmdCreate) --> 3c8dd43fbe3d0413a83d2cd1b1709acc9915375b06a7f3fe08bf71518166d60f(NewCmdGetRollout)
+end
+
+subgraph pkgkubectlargorollouts["pkg/kubectl-argo-rollouts"]
+3c8dd43fbe3d0413a83d2cd1b1709acc9915375b06a7f3fe08bf71518166d60f(NewCmdGetRollout) --> 3b1b9669823ee4b75c4f53841b2cf64d342b9116a2677dcaf061518ab54fb336(NewRolloutViewController)
+end
+
+subgraph pkgkubectlargorollouts["pkg/kubectl-argo-rollouts"]
+3b1b9669823ee4b75c4f53841b2cf64d342b9116a2677dcaf061518ab54fb336(NewRolloutViewController) --> 47043cb4ba5312c911eb4432ed8556aeaf90acdb237b31832299617c5e214b36(GetRolloutInfo)
+end
+
+subgraph pkgkubectlargorollouts["pkg/kubectl-argo-rollouts"]
+47043cb4ba5312c911eb4432ed8556aeaf90acdb237b31832299617c5e214b36(GetRolloutInfo) --> dbea8efab7ac04fe02875e2ed672e7f699bd10fd75ba6e31a8ad01b43d41db6f(NewRolloutInfo):::mainFlowStyle
+end
+
+subgraph pkgkubectlargorolloutscmd["pkg/kubectl-argo-rollouts/cmd"]
+227eaee48f790cb276fab7c3bb5c4aed07dc34a153c81931559b3ec413b1cb32(main):::rootsStyle --> 98f36eae5f8cd66e641d11126204e9f33463cc55244c9034287eda11b47ea95c(NewCmdArgoRollouts)
+end
+
+subgraph pkgapiclientrolloutrolloutpbgwgo["pkg/apiclient/rollout/rollout.pb.gw.go"]
+81698938ca5442eaa3cbe202d03b2189cf25e05187c764945399c761bfabc6f2(RegisterRolloutServiceHandlerServer):::rootsStyle --> 5900726305d1c576f24d481d9443d0a54681cf341d8444e32b5222a0314b3aca(local_request_RolloutService_ListRolloutInfos_0)
+end
+
+5900726305d1c576f24d481d9443d0a54681cf341d8444e32b5222a0314b3aca(local_request_RolloutService_ListRolloutInfos_0) --> 39a79ea9e5762111557968753d57424a9b825b6a1311558a73171ca024ffd3f1(ListRolloutInfos)
+
+subgraph pkgkubectlargorollouts["pkg/kubectl-argo-rollouts"]
+39a79ea9e5762111557968753d57424a9b825b6a1311558a73171ca024ffd3f1(ListRolloutInfos) --> dbea8efab7ac04fe02875e2ed672e7f699bd10fd75ba6e31a8ad01b43d41db6f(NewRolloutInfo):::mainFlowStyle
+end
+
+subgraph pkgkubectlargorollouts["pkg/kubectl-argo-rollouts"]
+3e110538d0602cb54c4aa7f7a5c2ee0ad04492dcc7a661388c8553404d0853da(RolloutToRolloutInfo):::rootsStyle --> dbea8efab7ac04fe02875e2ed672e7f699bd10fd75ba6e31a8ad01b43d41db6f(NewRolloutInfo):::mainFlowStyle
+end
+
+
+      classDef mainFlowStyle color:#000000,fill:#7CB9F4
+classDef rootsStyle color:#000000,fill:#00FFF4
+classDef Style1 color:#000000,fill:#00FFAA
+classDef Style2 color:#000000,fill:#FFFF00
+classDef Style3 color:#000000,fill:#AA7CB9
+```
+
+&nbsp;
+
 # Flow drill down
 
 ```mermaid
@@ -329,66 +389,8 @@ func newPodInfo(pod *corev1.Pod) rollout.PodInfo {
 
 </SwmSnippet>
 
-# Where is this flow used?
-
-This flow is used multiple times in the codebase as represented in the following diagram:
-
-```mermaid
-graph TD;
-      227eaee48f790cb276fab7c3bb5c4aed07dc34a153c81931559b3ec413b1cb32(main):::rootsStyle --> 89893c9ef987121649c4f335801b0864f75ce021f4596dc04852db09a5609f75(generatePluginsDocs)
-
-subgraph pkgkubectlargorolloutscmd["pkg/kubectl-argo-rollouts/cmd"]
-89893c9ef987121649c4f335801b0864f75ce021f4596dc04852db09a5609f75(generatePluginsDocs) --> 98f36eae5f8cd66e641d11126204e9f33463cc55244c9034287eda11b47ea95c(NewCmdArgoRollouts)
-end
-
-subgraph pkgkubectlargorolloutscmd["pkg/kubectl-argo-rollouts/cmd"]
-98f36eae5f8cd66e641d11126204e9f33463cc55244c9034287eda11b47ea95c(NewCmdArgoRollouts) --> 9afdd821698b0e788cc51c92ca9909087953186691dce2e3d3e5c6490b14bd93(NewCmdCreate)
-end
-
-subgraph pkgkubectlargorolloutscmd["pkg/kubectl-argo-rollouts/cmd"]
-9afdd821698b0e788cc51c92ca9909087953186691dce2e3d3e5c6490b14bd93(NewCmdCreate) --> 3c8dd43fbe3d0413a83d2cd1b1709acc9915375b06a7f3fe08bf71518166d60f(NewCmdGetRollout)
-end
-
-subgraph pkgkubectlargorollouts["pkg/kubectl-argo-rollouts"]
-3c8dd43fbe3d0413a83d2cd1b1709acc9915375b06a7f3fe08bf71518166d60f(NewCmdGetRollout) --> 3b1b9669823ee4b75c4f53841b2cf64d342b9116a2677dcaf061518ab54fb336(NewRolloutViewController)
-end
-
-subgraph pkgkubectlargorollouts["pkg/kubectl-argo-rollouts"]
-3b1b9669823ee4b75c4f53841b2cf64d342b9116a2677dcaf061518ab54fb336(NewRolloutViewController) --> 47043cb4ba5312c911eb4432ed8556aeaf90acdb237b31832299617c5e214b36(GetRolloutInfo)
-end
-
-subgraph pkgkubectlargorollouts["pkg/kubectl-argo-rollouts"]
-47043cb4ba5312c911eb4432ed8556aeaf90acdb237b31832299617c5e214b36(GetRolloutInfo) --> dbea8efab7ac04fe02875e2ed672e7f699bd10fd75ba6e31a8ad01b43d41db6f(NewRolloutInfo):::mainFlowStyle
-end
-
-subgraph pkgkubectlargorolloutscmd["pkg/kubectl-argo-rollouts/cmd"]
-227eaee48f790cb276fab7c3bb5c4aed07dc34a153c81931559b3ec413b1cb32(main):::rootsStyle --> 98f36eae5f8cd66e641d11126204e9f33463cc55244c9034287eda11b47ea95c(NewCmdArgoRollouts)
-end
-
-subgraph pkgapiclientrolloutrolloutpbgwgo["pkg/apiclient/rollout/rollout.pb.gw.go"]
-81698938ca5442eaa3cbe202d03b2189cf25e05187c764945399c761bfabc6f2(RegisterRolloutServiceHandlerServer):::rootsStyle --> 5900726305d1c576f24d481d9443d0a54681cf341d8444e32b5222a0314b3aca(local_request_RolloutService_ListRolloutInfos_0)
-end
-
-5900726305d1c576f24d481d9443d0a54681cf341d8444e32b5222a0314b3aca(local_request_RolloutService_ListRolloutInfos_0) --> 39a79ea9e5762111557968753d57424a9b825b6a1311558a73171ca024ffd3f1(ListRolloutInfos)
-
-subgraph pkgkubectlargorollouts["pkg/kubectl-argo-rollouts"]
-39a79ea9e5762111557968753d57424a9b825b6a1311558a73171ca024ffd3f1(ListRolloutInfos) --> dbea8efab7ac04fe02875e2ed672e7f699bd10fd75ba6e31a8ad01b43d41db6f(NewRolloutInfo):::mainFlowStyle
-end
-
-subgraph pkgkubectlargorollouts["pkg/kubectl-argo-rollouts"]
-3e110538d0602cb54c4aa7f7a5c2ee0ad04492dcc7a661388c8553404d0853da(RolloutToRolloutInfo):::rootsStyle --> dbea8efab7ac04fe02875e2ed672e7f699bd10fd75ba6e31a8ad01b43d41db6f(NewRolloutInfo):::mainFlowStyle
-end
-
-
-      classDef mainFlowStyle color:#000000,fill:#7CB9F4
-classDef rootsStyle color:#000000,fill:#00FFF4
-classDef Style1 color:#000000,fill:#00FFAA
-classDef Style2 color:#000000,fill:#FFFF00
-classDef Style3 color:#000000,fill:#AA7CB9
-```
-
-&nbsp;
+# 
 
 *This is an auto-generated document by Swimm 🌊 and has not yet been verified by a human*
 
-<SwmMeta version="3.0.0" repo-id="Z2l0aHViJTNBJTNBaW50dWl0LWFyZ28tcm9sbG91dHMtZGVtbyUzQSUzQVN3aW1tLURlbW8=" repo-name="intuit-argo-rollouts-demo"><sup>Powered by [Swimm](/)</sup></SwmMeta>
+<SwmMeta version="3.0.0" repo-id="Z2l0aHViJTNBJTNBaW50dWl0LWFyZ28tcm9sbG91dHMtZGVtbyUzQSUzQVN3aW1tLURlbW8=" repo-name="intuit-argo-rollouts-demo"><sup>Powered by [Swimm](https://app.swimm.io/)</sup></SwmMeta>

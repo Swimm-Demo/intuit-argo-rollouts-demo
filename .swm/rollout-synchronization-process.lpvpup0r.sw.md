@@ -95,72 +95,25 @@ func (c *Controller) syncHandler(ctx context.Context, key string) error {
 
 </SwmSnippet>
 
-<SwmSnippet path="/rollout/stepplugin.go" line="29">
+<SwmSnippet path="/rollout/controller.go" line="438">
 
 ---
 
-## reconcile
-
-The <SwmToken path="rollout/stepplugin.go" pos="29:9:9" line-data="func (spc *stepPluginContext) reconcile(c *rolloutContext) error {">`reconcile`</SwmToken> function in <SwmPath>[rollout/stepplugin.go](rollout/stepplugin.go)</SwmPath> handles the detailed reconciliation logic for the rollout. It manages the state transitions of step plugins, aborts steps if necessary, and ensures that the rollout progresses through its defined steps. This function is crucial for maintaining the integrity and progression of the rollout process.
+Toward toward the end of the <SwmToken path="/rollout/controller.go" pos="382:9:9" line-data="func (c *Controller) syncHandler(ctx context.Context, key string) error {">`syncHandler`</SwmToken>, we call <SwmToken path="/rollout/controller.go" pos="438:7:7" line-data="	err = roCtx.reconcile()">`reconcile`</SwmToken> , which is described in depth in <SwmLink doc-title="Reconciliation Process in Deployments">[Reconciliation Process in Deployments](/.swm/reconciliation-process-in-deployments.a51xyju0.sw.md)</SwmLink>:
 
 ```go
-func (spc *stepPluginContext) reconcile(c *rolloutContext) error {
-	rollout := c.rollout.DeepCopy()
-	spc.stepPluginStatuses = rollout.Status.Canary.StepPluginStatuses
-
-	//On abort, we need to abort all successful previous steps
-	if c.pauseContext.IsAborted() {
-		for i := len(spc.stepPluginStatuses) - 1; i >= 0; i-- {
-			pluginStatus := spc.stepPluginStatuses[i]
-			if pluginStatus.Operation != v1alpha1.StepPluginOperationRun {
-				// Only call abort for Run operation.
-				continue
-			}
-			pluginStep := rollout.Spec.Strategy.Canary.Steps[pluginStatus.Index]
-			if pluginStep.Plugin == nil {
-				continue
-			}
-
-			stepPlugin, err := spc.resolver.Resolve(pluginStatus.Index, *pluginStep.Plugin, c.log)
-			if err != nil {
-				return spc.handleError(c, fmt.Errorf("could not create step plugin at index %d : %w", pluginStatus.Index, err))
-			}
-```
-
----
-
-</SwmSnippet>
-
-<SwmSnippet path="/rollout/controller.go" line="349">
-
----
-
-## Run
-
-The <SwmToken path="rollout/controller.go" pos="349:2:2" line-data="// Run will set up the event handlers for types we are interested in, as well">`Run`</SwmToken> function sets up the event handlers, syncs informer caches, and starts the workers that process the rollouts. It ensures that the controller is actively monitoring and managing the rollout resources.
-
-```go
-// Run will set up the event handlers for types we are interested in, as well
-// as syncing informer caches and starting workers. It will block until stopCh
-// is closed, at which point it will shutdown the workqueue and wait for
-// workers to finish processing their current work items.
-func (c *Controller) Run(ctx context.Context, threadiness int) error {
-	log.Info("Starting Rollout workers")
-	wg := sync.WaitGroup{}
-	for i := 0; i < threadiness; i++ {
-		wg.Add(1)
-		go wait.Until(func() {
-			controllerutil.RunWorker(ctx, c.rolloutWorkqueue, logutil.RolloutKey, c.syncHandler, c.metricsServer)
-			log.Debug("Rollout worker has stopped")
-			wg.Done()
-		}, time.Second, ctx.Done())
+	err = roCtx.reconcile()
+	if err != nil {
+		logCtx.Errorf("roCtx.reconcile err %v", err)
+		// return an err here so that we do not update the informer cache with a "bad" rollout object, for the case when
+		// we get an error during reconciliation but c.newRollout still gets updated this can happen in syncReplicaSetRevision
+		// https://github.com/argoproj/argo-rollouts/issues/2522#issuecomment-1492181154 I also believe there are other cases
+		// that newRollout can get updated while we get an error during reconciliation
+		return err
 	}
-	log.Info("Started rollout workers")
-
-	wg.Add(1)
-	go c.IstioController.Run(ctx)
-
-	<-ctx.Done()
+	if roCtx.newRollout != nil {
+		c.writeBackToInformer(roCtx.newRollout)
+	}
 ```
 
 ---
@@ -476,4 +429,4 @@ func (r *informerBasedTemplateResolver) getInformer(gvk schema.GroupVersionKind)
 
 *This is an auto-generated document by Swimm 🌊 and has not yet been verified by a human*
 
-<SwmMeta version="3.0.0" repo-id="Z2l0aHViJTNBJTNBaW50dWl0LWFyZ28tcm9sbG91dHMtZGVtbyUzQSUzQVN3aW1tLURlbW8=" repo-name="intuit-argo-rollouts-demo"><sup>Powered by [Swimm](/)</sup></SwmMeta>
+<SwmMeta version="3.0.0" repo-id="Z2l0aHViJTNBJTNBaW50dWl0LWFyZ28tcm9sbG91dHMtZGVtbyUzQSUzQVN3aW1tLURlbW8=" repo-name="intuit-argo-rollouts-demo"><sup>Powered by [Swimm](https://app.swimm.io/)</sup></SwmMeta>
